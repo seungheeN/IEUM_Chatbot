@@ -1,33 +1,43 @@
-function InputBar({ input, setInput, onSend }) {
+function InputBar({ input, setInput, onSend, loading }) {
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !loading) {
+      onSend();
+    }
+  };
+
   return (
-    <div style={{
-      display: "flex",
-      gap: "10px",
-      marginTop: "10px"
-    }}>
+    <div
+      style={{
+        display: "flex",
+        gap: "10px",
+        marginTop: "10px"
+      }}
+    >
       <input
         type="text"
-        placeholder="질문을 입력하세요"
         value={input}
+        placeholder="질문을 입력해 주세요"
         onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && onSend()}
+        onKeyDown={handleKeyDown}
+        disabled={loading}
         style={{
           flex: 1,
-          padding: "14px",
           fontSize: "18px",
-          borderRadius: "10px",
-          border: "1px solid #ccc"
+          padding: "14px",
+          borderRadius: "12px",
+          border: "1px solid #b8c7e0"
         }}
       />
       <button
         onClick={onSend}
+        disabled={loading}
         style={{
-          padding: "14px 20px",
           fontSize: "18px",
-          backgroundColor: "#4CAF50",
-          color: "white",
+          padding: "14px 18px",
+          borderRadius: "12px",
           border: "none",
-          borderRadius: "10px",
+          backgroundColor: "#1a73e8",
+          color: "white",
           cursor: "pointer"
         }}
       >

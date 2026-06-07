@@ -2,6 +2,8 @@ import { useState } from "react";
 import MainScreen from "./components/MainScreen";
 import ChatWindow from "./components/Chatwindow";
 import InputBar from "./components/Inputbar";
+import VoiceControls from "./components/VoiceControls";
+import "./App.css";
 
 function App() {
   const [screen, setScreen] = useState("main");
@@ -9,11 +11,75 @@ function App() {
     { role: "bot", text: "안녕하세요 😊 무엇을 도와드릴까요?" }
   ]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
-    setMessages([...messages, { role: "user", text: input }]);
+  const API_BASE_URL = "http://localhost:8000";
+
+  const sendMessage = async () => {
+    if (!input.trim() || loading) return;
+
+    const userText = input;
+
+    setMessages((prev) => [...prev, { role: "user", text: userText }]);
     setInput("");
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ prompt: userText })
+      });
+
+      if (!res.ok) {
+        throw new Error("chat api error");
+      }
+
+      const data = await res.json();
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "bot", text: data.response || "답변을 불러오지 못했습니다." }
+      ]);
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "bot", text: "서버와 연결되지 않았습니다. 잠시 후 다시 시도해 주세요." }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSpeechResult = (recognizedText) => {
+    setInput(recognizedText);
+  };
+
+  const speakLastBotMessage = async () => {
+    const lastBotMessage = [...messages].reverse().find((msg) => msg.role === "bot");
+
+    if (!lastBotMessage) return;
+
+    try {
+      await fetch(`${API_BASE_URL}/tts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ text: lastBotMessage.text })
+      });
+
+      const utterance = new SpeechSynthesisUtterance(lastBotMessage.text);
+      utterance.lang = "ko-KR";
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    } catch (error) {
+      alert("음성 읽기 실행 중 오류가 발생했습니다.");
+    }
   };
 
   if (screen === "main") {
@@ -21,11 +87,13 @@ function App() {
   }
 
   return (
-    <div style={{
-      maxWidth: "600px",
-      margin: "0 auto",
-      padding: "20px"
-    }}>
+    <div
+      style={{
+        maxWidth: "600px",
+        margin: "0 auto",
+        padding: "20px"
+      }}
+    >
       <button
         onClick={() => setScreen("main")}
         style={{
@@ -35,16 +103,37 @@ function App() {
           border: "none",
           cursor: "pointer",
           color: "#1a3a6b"
-        }}>
+        }}
+      >
         ← 뒤로가기
       </button>
-      <h2 style={{ fontSize: "24px", textAlign: "center", color: "#1a3a6b" }}>
+
+      <h2
+        style={{
+          fontSize: "24px",
+          textAlign: "center",
+          color: "#1a3a6b"
+        }}
+      >
         🏥 병원 안내 챗봇
       </h2>
-      <ChatWindow messages={messages} />
-      <InputBar input={input} setInput={setInput} onSend={sendMessage} />
+
+      <ChatWindow messages={messages} loading={loading} />
+
+      <VoiceControls
+        onSpeechResult={handleSpeechResult}
+        onSpeak={speakLastBotMessage}
+      />
+
+      <InputBar
+        input={input}
+        setInput={setInput}
+        onSend={sendMessage}
+        loading={loading}
+      />
     </div>
   );
 }
 
 export default App;
+
