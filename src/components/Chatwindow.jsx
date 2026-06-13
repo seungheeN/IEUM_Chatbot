@@ -1,41 +1,35 @@
+import { useEffect, useRef } from "react";
 import Message from "./Message";
 
 function ChatWindow({ messages, loading }) {
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
   return (
-    <div
-      style={{
-        border: "1px solid #d9e2f1",
-        borderRadius: "16px",
-        padding: "16px",
-        height: "420px",
-        overflowY: "auto",
-        backgroundColor: "#f9fbff",
-        marginBottom: "12px"
-      }}
-    >
-      {messages.map((msg, index) => (
-        <Message key={index} role={msg.role} text={msg.text} />
-      ))}
+    <section className="chat-window" aria-live="polite">
+      {messages.length === 0 ? (
+        <div className="empty-state">질문을 입력하면 여기에서 답변을 볼 수 있습니다.</div>
+      ) : (
+        messages.map((msg, index) => <Message key={`${msg.role}-${index}`} role={msg.role} text={msg.text} />)
+      )}
 
       {loading && (
-        <div style={{ textAlign: "left", margin: "8px 0" }}>
-          <span
-            style={{
-              display: "inline-block",
-              backgroundColor: "#e5e7eb",
-              color: "#111827",
-              padding: "12px 16px",
-              borderRadius: "14px",
-              fontSize: "18px"
-            }}
-          >
-            답변을 불러오는 중입니다...
-          </span>
+        <div className="message-row bot-row">
+          <div className="message bot-message loading-bubble">
+            <span className="loading-dot" />
+            <span className="loading-dot" />
+            <span className="loading-dot" />
+            <span className="loading-text">답변을 준비하고 있습니다.</span>
+          </div>
         </div>
       )}
-    </div>
+
+      <div ref={bottomRef} />
+    </section>
   );
 }
 
 export default ChatWindow;
-
