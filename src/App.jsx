@@ -3,7 +3,6 @@ import MainScreen from "./components/MainScreen";
 import ChatWindow from "./components/Chatwindow";
 import InputBar from "./components/Inputbar";
 import VoiceControls from "./components/VoiceControls";
-import "./App.css";
 
 function App() {
   const [screen, setScreen] = useState("main");
@@ -30,7 +29,7 @@ function App() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ prompt: userText })
+        body: JSON.stringify({ session_id: "user_default", prompt: userText })
       });
 
       if (!res.ok) {
@@ -57,19 +56,10 @@ function App() {
     setInput(recognizedText);
   };
 
-  const speakLastBotMessage = async () => {
+  const speakLastBotMessage =  () => {
     const lastBotMessage = [...messages].reverse().find((msg) => msg.role === "bot");
 
     if (!lastBotMessage) return;
-
-    try {
-      await fetch(`${API_BASE_URL}/tts`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ text: lastBotMessage.text })
-      });
 
       const utterance = new SpeechSynthesisUtterance(lastBotMessage.text);
       utterance.lang = "ko-KR";
@@ -77,8 +67,6 @@ function App() {
       utterance.pitch = 1;
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utterance);
-    } catch (error) {
-      alert("음성 읽기 실행 중 오류가 발생했습니다.");
     }
   };
 
