@@ -4,6 +4,9 @@ from pydantic import BaseModel
 from llama_cpp import Llama
 from typing import List, Dict
 
+[RAG 모듈]
+from rag.retriever import get_rag_context, get_terms_context, simplify_terms
+
 app = FastAPI()
 
 # ===============================
@@ -38,6 +41,23 @@ class ChatRequest(BaseModel):
 def chat_endpoint(request: ChatRequest):
     sid = request.session_id
     user_question = request.prompt
+
+    rag_context = get_rag_context(user_question, top_k=3)
+    terms_context = get_terms_context(limit=30)
+    easy_question = simplify_terms(user_question) # 프롬프트 최적화용 보조 단어
+
+    rag_prompt = f"""[병원 안내 관련 문서 정보]
+    {rag_context}
+
+    [어르신 맞춤용 어려운 용어 해설 사전]
+    {terms_context}
+
+    [어르신의 실제 질문]
+    {user_question} (참고 키워드: {easy_question})
+
+    [지시사항]
+    주어진 '병원 안내 관련 문서 정보'와 '어려운 용어 해설 사전'의 내용에만 절대적으로 기반하여 어르신의 질문에 답변하세요. 
+    문서에 나오지 않는 내용은 상상해서 지어내거나 거짓말하지 말고, 모르는 내용이라면 "확인 후 안내해 드리겠다"고 답변하세요."""
     
     # 처음 대화를 시작하는 방이라면 기본 페르소나 주입
     if sid not in session_memories:
@@ -46,8 +66,8 @@ def chat_endpoint(request: ChatRequest):
         ]
     
     # 신규 질문을 해당 방 기록에 누적
-    session_memories[sid].append({"role": "user", "content": user_question})
-    
+    session_memories[sid].append({"role": "user", "content": rag_prompt})
+
     # 과거 대화 흐름을 고려해 AI 추론 실행
     response = llm.create_chat_completion(
         messages=session_memories[sid],
