@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from llama_cpp import Llama
 from typing import List, Dict
 
-[RAG 모듈]
+# [RAG 모듈]
 from rag.retriever import get_rag_context, get_terms_context, simplify_terms
 
 app = FastAPI()
@@ -22,7 +22,7 @@ app.add_middleware(
 
 print("[서버 시작] 로컬 AI 모델을 메모리에 로드합니다.")
 llm = Llama(
-    model_path="./Qwen2.5-3B-Korean.Q4_K_M.gguf",
+    model_path="./qwen2.5-3b-instruct.Q4_K_M.gguf",
     n_ctx=2048,
     verbose=False,
     chat_format="chatml"
