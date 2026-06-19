@@ -121,7 +121,7 @@ function App() {
           background: "none",
           border: "none",
           cursor: "pointer",
-          color: "#1a3a6b"
+          color: "#f0f4ff"
         }}
       >
         ← 뒤로가기
@@ -131,7 +131,7 @@ function App() {
         style={{
           fontSize: "24px",
           textAlign: "center",
-          color: "#1a3a6b"
+          color: "#f0f4ff"
         }}
       >
         병원 안내 챗봇
