@@ -3,7 +3,6 @@ import MainScreen from "./components/MainScreen";
 import ChatWindow from "./components/Chatwindow";
 import InputBar from "./components/Inputbar";
 import VoiceControls from "./components/VoiceControls";
-import "./App.css";
 
 function App() {
   const [screen, setScreen] = useState("main");
