@@ -7,21 +7,45 @@ import VoiceControls from "./components/VoiceControls";
 function App() {
   const [screen, setScreen] = useState("main");
   const [messages, setMessages] = useState([
-    { role: "bot", text: "안녕하세요 😊 무엇을 도와드릴까요?" }
+    { role: "bot", text: "안녕하세요. 무엇을 도와드릴까요?" }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   const API_BASE_URL = "http://localhost:8000";
 
-  const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+  const stopSpeaking = () => {
+    window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+  };
 
-    const userText = input;
+  const speakText = (text) => {
+    if (!text) return;
+
+    stopSpeaking();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "ko-KR";
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const sendMessage = async (messageText = input, speakResponse = false) => {
+    if (!messageText.trim() || loading) return;
+
+    const userText = messageText.trim();
 
     setMessages((prev) => [...prev, { role: "user", text: userText }]);
     setInput("");
     setLoading(true);
+    stopSpeaking();
 
     try {
       const res = await fetch(`${API_BASE_URL}/chat`, {
@@ -37,16 +61,27 @@ function App() {
       }
 
       const data = await res.json();
+      const botText = data.response || "답변을 불러오지 못했습니다.";
 
       setMessages((prev) => [
         ...prev,
-        { role: "bot", text: data.response || "답변을 불러오지 못했습니다." }
+        { role: "bot", text: botText }
       ]);
-    } catch (error) {
+
+      if (speakResponse) {
+        speakText(botText);
+      }
+    } catch {
+      const errorMessage = "서버와 연결되지 않았습니다. 잠시 후 다시 시도해 주세요.";
+
       setMessages((prev) => [
         ...prev,
-        { role: "bot", text: "서버와 연결되지 않았습니다. 잠시 후 다시 시도해 주세요." }
+        { role: "bot", text: errorMessage }
       ]);
+
+      if (speakResponse) {
+        speakText(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -54,20 +89,15 @@ function App() {
 
   const handleSpeechResult = (recognizedText) => {
     setInput(recognizedText);
+    sendMessage(recognizedText, true);
   };
 
-  const speakLastBotMessage =  () => {
+  const speakLastBotMessage = () => {
     const lastBotMessage = [...messages].reverse().find((msg) => msg.role === "bot");
 
     if (!lastBotMessage) return;
 
-      const utterance = new SpeechSynthesisUtterance(lastBotMessage.text);
-      utterance.lang = "ko-KR";
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utterance);
-    }
+    speakText(lastBotMessage.text);
   };
 
   if (screen === "main") {
@@ -90,7 +120,7 @@ function App() {
           background: "none",
           border: "none",
           cursor: "pointer",
-          color: "#1a3a6b"
+          color: "#f0f4ff"
         }}
       >
         ← 뒤로가기
@@ -100,10 +130,10 @@ function App() {
         style={{
           fontSize: "24px",
           textAlign: "center",
-          color: "#1a3a6b"
+          color: "#f0f4ff"
         }}
       >
-        🏥 병원 안내 챗봇
+        병원 안내 챗봇
       </h2>
 
       <ChatWindow messages={messages} loading={loading} />
@@ -111,12 +141,15 @@ function App() {
       <VoiceControls
         onSpeechResult={handleSpeechResult}
         onSpeak={speakLastBotMessage}
+        onStopSpeak={stopSpeaking}
+        isSpeaking={isSpeaking}
+        loading={loading}
       />
 
       <InputBar
         input={input}
         setInput={setInput}
-        onSend={sendMessage}
+        onSend={() => sendMessage()}
         loading={loading}
       />
     </div>
@@ -124,4 +157,3 @@ function App() {
 }
 
 export default App;
-
