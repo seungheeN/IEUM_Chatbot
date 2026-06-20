@@ -13,13 +13,13 @@ function MainScreen({ onChatStart }) {
       }}
     >
       <div style={{ textAlign: "center" }}>
-        <div style={{ fontSize: "40px" }}>🏥</div>
+        <div style={{ fontSize: "40px", marginBottom: "18px" }}>🏥</div>
         <h1
           style={{
             fontSize: "28px",
             fontWeight: "bold",
             color: "#1a3a6b",
-            marginTop: "10px"
+            marginTop: "0"
           }}
         >
           병원 안내 챗봇

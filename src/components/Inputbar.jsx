@@ -38,7 +38,7 @@ function InputBar({ input, setInput, onSend, loading }) {
           border: "none",
           backgroundColor: "#1a73e8",
           color: "white",
-          cursor: "pointer"
+          cursor: loading ? "not-allowed" : "pointer"
         }}
       >
         전송

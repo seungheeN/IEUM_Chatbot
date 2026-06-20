@@ -3,8 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from llama_cpp import Llama
 from typing import List, Dict
+import re
 
-[RAG 모듈]
+# [RAG 모듈]
 from rag.retriever import get_rag_context, get_terms_context, simplify_terms
 
 app = FastAPI()
@@ -22,8 +23,8 @@ app.add_middleware(
 
 print("[서버 시작] 로컬 AI 모델을 메모리에 로드합니다.")
 llm = Llama(
-    model_path="./Qwen2.5-3B-Korean.Q4_K_M.gguf",
-    n_ctx=2048,
+    model_path="./qwen2.5-3b-instruct.Q4_K_M.gguf",
+    n_ctx=4096,
     verbose=False,
     chat_format="chatml"
 )
@@ -39,8 +40,14 @@ class ChatRequest(BaseModel):
 
 @app.post("/chat")
 def chat_endpoint(request: ChatRequest):
+    # 사용자의 질문 앞뒤 공백 제거
+    user_question = request.prompt.strip() if request.prompt else ""
+
+    # 예외 처리 (빈 질문, 의미 없는 문자열)
+    if len(user_question) < 2 or re.fullmatch(r'[a-zA-Zㄱ-ㅎㅏ-ㅣ\s]+', user_question):
+        return {"response": "죄송합니다, 잘 알아듣지 못했어요. 병원 이용에 대해 궁금한 점을 문장으로 다시 말씀해 주시겠어요?"}
+    
     sid = request.session_id
-    user_question = request.prompt
 
     rag_context = get_rag_context(user_question, top_k=3)
     terms_context = get_terms_context(limit=30)
@@ -65,12 +72,16 @@ def chat_endpoint(request: ChatRequest):
             {"role": "system", "content": "당신은 노인 전문 병원의 친절하고 싹싹한 안내 간호사입니다. 어르신의 질문에 깊이 공감하며, 2~3문장으로 짧고 다정하게 존댓말로 대답해주세요."}
         ]
     
-    # 신규 질문을 해당 방 기록에 누적
-    session_memories[sid].append({"role": "user", "content": rag_prompt})
+    session_memories[sid].append({"role": "user", "content": user_question})
 
-    # 과거 대화 흐름을 고려해 AI 추론 실행
+    # AI에게 보낼 일회용 메시지 리스트를 복사
+    messages_for_ai = session_memories[sid].copy()
+    
+    messages_for_ai[-1] = {"role": "user", "content": rag_prompt}
+
+    # 과거 대화 흐름 + 방금 만든 일회용 프롬프트를 합쳐서 AI 추론 실행
     response = llm.create_chat_completion(
-        messages=session_memories[sid],
+        messages=messages_for_ai,
         max_tokens=150,
         temperature=0.3
     )
