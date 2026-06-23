@@ -25,6 +25,7 @@ print("[서버 시작] 로컬 AI 모델을 메모리에 로드합니다.")
 llm = Llama(
     model_path="./qwen2.5-3b-instruct.Q4_K_M.gguf",
     n_ctx=4096,
+    n_threads=4,
     verbose=False,
     chat_format="chatml"
 )
@@ -50,7 +51,7 @@ def chat_endpoint(request: ChatRequest):
     sid = request.session_id
 
     rag_context = get_rag_context(user_question, top_k=3)
-    terms_context = get_terms_context(limit=30)
+    terms_context = get_terms_context(limit=3)
     easy_question = simplify_terms(user_question) # 프롬프트 최적화용 보조 단어
 
     rag_prompt = f"""[병원 안내 관련 문서 정보]
