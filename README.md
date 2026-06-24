@@ -30,7 +30,7 @@
 | **Fine-Tuning** | Unsloth, PEFT, QLoRA (Google Colab T4 GPU 환경) |
 | **Backend** | FastAPI, llama-cpp-python, Python 3.10+ |
 | **RAG System** | FAISS Vector Store, Custom Regex Filter, In-Memory Sliding Window |
-| **Frontend** | React, Web TTS API |
+| **Frontend** | React, Vite, Speech Recognition API, Speech Synthesis API |
 
 ---
 
