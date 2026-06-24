@@ -114,9 +114,8 @@ uvicorn main:app --reload --port 8000
 새로운 터미널 창을 열고 프론트엔드 폴더로 이동하여 웹 서버를 구동합니다.
 
 ```text
-cd src
 npm install
-npm start
+npm run dev
 ```
 
 이후 브라우저에서 <http://localhost:3000>에 접속하여 챗봇 서비스를 이용하실 수 있습니다.
